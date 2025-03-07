@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>テキストアニメーター</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', 'Meiryo', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      color: #333;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .input-container {
+      margin-bottom: 20px;
+    }
+    textarea {
+      width: 100%;
+      height: 150px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      resize: vertical;
+      font-size: 16px;
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    button {
+      padding: 8px 15px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+    .speed-control {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .output-container {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 15px;
+      height: 300px;
+      overflow-y: auto;
+      background-color: #f9f9f9;
+      white-space: pre-wrap;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+    .status {
+      margin-top: 10px;
+      font-style: italic;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>テキストアニメーター</h1>
+    
+    <div class="input-container">
+      <textarea id="inputText" placeholder="ここにテキストを入力してください..."></textarea>
+    </div>
+    
+    <div class="controls">
+      <button id="startBtn">開始</button>
+      <button id="pauseBtn" disabled>一時停止</button>
+      <button id="resumeBtn" disabled>再開</button>
+      <button id="stopBtn" disabled>停止</button>
+      <div class="speed-control">
+        <label for="speed">表示速度:</label>
+        <input type="range" id="speed" min="10" max="500" value="100">
+        <span id="speedValue">100ms</span>
+      </div>
+    </div>
+    
+    <div class="output-container" id="output"></div>
+    
+    <div class="status" id="status">準備完了</div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const inputText = document.getElementById('inputText');
+      const output = document.getElementById('output');
+      const startBtn = document.getElementById('startBtn');
+      const pauseBtn = document.getElementById('pauseBtn');
+      const resumeBtn = document.getElementById('resumeBtn');
+      const stopBtn = document.getElementById('stopBtn');
+      const speedSlider = document.getElementById('speed');
+      const speedValue = document.getElementById('speedValue');
+      const status = document.getElementById('status');
+      
+      let textIndex = 0;
+      let animationInterval;
+      let isPaused = false;
+      let text = '';
+      
+      // 速度スライダーの初期化
+      speedSlider.addEventListener('input', function() {
+        speedValue.textContent = `${this.value}ms`;
+        if (animationInterval) {
+          clearInterval(animationInterval);
+          if (!isPaused) {
+            startAnimation();
+          }
+        }
+      });
+      
+      // 開始ボタン
+      startBtn.addEventListener('click', function() {
+        text = inputText.value;
+        if (text.trim() === '') {
+          status.textContent = 'テキストを入力してください';
+          return;
+        }
+        
+        output.textContent = '';
+        textIndex = 0;
+        isPaused = false;
+        
+        updateButtonState(true);
+        startAnimation();
+        status.textContent = '表示中...';
+      });
+      
+      // 一時停止ボタン
+      pauseBtn.addEventListener('click', function() {
+        clearInterval(animationInterval);
+        animationInterval = null;
+        isPaused = true;
+        
+        pauseBtn.disabled = true;
+        resumeBtn.disabled = false;
+        status.textContent = '一時停止中';
+      });
+      
+      // 再開ボタン
+      resumeBtn.addEventListener('click', function() {
+        isPaused = false;
+        resumeBtn.disabled = true;
+        pauseBtn.disabled = false;
+        
+        startAnimation();
+        status.textContent = '表示中...';
+      });
+      
+      // 停止ボタン
+      stopBtn.addEventListener('click', function() {
+        clearInterval(animationInterval);
+        animationInterval = null;
+        updateButtonState(false);
+        status.textContent = '停止しました';
+      });
+      
+      // アニメーションの開始
+      function startAnimation() {
+        const speed = parseInt(speedSlider.value);
+        
+        clearInterval(animationInterval);
+        animationInterval = setInterval(function() {
+          if (textIndex < text.length) {
+            output.textContent += text[textIndex];
+            textIndex++;
+            
+            // 自動スクロール
+            output.scrollTop = output.scrollHeight;
+          } else {
+            clearInterval(animationInterval);
+            animationInterval = null;
+            updateButtonState(false);
+            status.textContent = '表示完了';
+          }
+        }, speed);
+      }
+      
+      // ボタンの状態を更新
+      function updateButtonState(isAnimating) {
+        startBtn.disabled = isAnimating;
+        pauseBtn.disabled = !isAnimating || isPaused;
+        resumeBtn.disabled = !isAnimating || !isPaused;
+        stopBtn.disabled = !isAnimating;
+      }
+    });
+  </script>
+</body>
+</html>
